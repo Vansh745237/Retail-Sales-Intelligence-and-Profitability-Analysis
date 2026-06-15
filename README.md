@@ -7,6 +7,14 @@ This project focuses on analyzing retail sales data to uncover valuable business
 The objective is to support data-driven decision-making by transforming raw retail data into actionable business insights.
 
 ---
+## Live Features
+
+- Interactive Streamlit Dashboard
+- Sales Analytics
+- Profitability Analysis
+- Profit Prediction using Machine Learning
+- Business Intelligence Insights
+
 
 ## Dataset Information
 
