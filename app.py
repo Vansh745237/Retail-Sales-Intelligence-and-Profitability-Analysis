@@ -5,50 +5,39 @@ import plotly.figure_factory as ff
 import joblib
 import os
 
-# =====================================
-# PAGE CONFIG
-# =====================================
-
 st.set_page_config(
     page_title="Retail Sales Intelligence Suite",
     page_icon="📊",
     layout="wide"
 )
 
-# =====================================
-# CUSTOM CSS
-# =====================================
-
 st.markdown("""
 <style>
-
-.stApp{
-    background:#0b1120;
-    color:white;
-}
-
+.stApp{background:#020617;color:white;}
+.block-container{padding-top:0.7rem;max-width:95%;}
+header{visibility:hidden;}
 section[data-testid="stSidebar"]{
-    background:#111827;
+    background:#0f172a;
+    border-right:1px solid #1e293b;
 }
-
-div[data-testid="metric-container"]{
-    background:linear-gradient(135deg,#1e293b,#334155);
-    border:1px solid #475569;
-    padding:15px;
-    border-radius:16px;
-    box-shadow:0px 4px 12px rgba(0,0,0,0.3);
-}
-
-h1,h2,h3,h4,h5,h6{
+span[data-baseweb="tag"]{
+    background:#2563eb !important;
     color:white !important;
 }
-
+div[data-testid="metric-container"]{
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:16px;
+    padding:18px;
+}
+div[data-testid="stMetricValue"]{
+    color:white !important;
+    font-size:30px !important;
+    font-weight:700 !important;
+}
+h1,h2,h3,h4,h5,h6,p{color:white !important;}
 </style>
 """, unsafe_allow_html=True)
-
-# =====================================
-# LOAD DATA
-# =====================================
 
 @st.cache_data
 def load_data():
@@ -56,322 +45,102 @@ def load_data():
 
 df = load_data()
 
-# =====================================
-# LOAD MODEL
-# =====================================
-
 model = None
-
 if os.path.exists("models/profit_prediction_model.pkl"):
-    model = joblib.load(
-        "models/profit_prediction_model.pkl"
-    )
-
-# =====================================
-# HELPER
-# =====================================
+    try:
+        model = joblib.load("models/profit_prediction_model.pkl")
+    except:
+        model = None
 
 def dark_plot(fig):
-
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0b1120",
-        plot_bgcolor="#0b1120",
+        paper_bgcolor="#020617",
+        plot_bgcolor="#020617",
         font_color="white"
     )
-
     return fig
 
-# =====================================
-# HERO SECTION
-# =====================================
-
 st.markdown("""
-<div style="
-background:linear-gradient(135deg,#0f172a,#1e3a8a);
-padding:35px;
-border-radius:22px;
-margin-bottom:20px;
-">
-
-<h1>
-🚀 Retail Sales Intelligence Suite
-</h1>
-
-<p style="font-size:18px;color:#cbd5e1;">
-Executive Analytics • Business Intelligence • AI Forecasting
-</p>
-
+<div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);
+padding:22px;border-radius:18px;margin-bottom:20px;">
+<h1>🚀 Retail Sales Intelligence Suite</h1>
+<p>Executive Analytics • Business Intelligence • AI Forecasting</p>
 </div>
 """, unsafe_allow_html=True)
 
-# =====================================
-# SIDEBAR
-# =====================================
+st.sidebar.title("🚀 Analytics Control Center")
 
-st.sidebar.markdown("""
-# 🚀 Analytics Control Center
-
-Filter business metrics and explore insights.
-""")
-
-region = st.sidebar.multiselect(
-    "Region",
-    options=df["Region"].unique(),
-    default=df["Region"].unique()
-)
-
-category = st.sidebar.multiselect(
-    "Category",
-    options=df["Category"].unique(),
-    default=df["Category"].unique()
-)
-
-segment = st.sidebar.multiselect(
-    "Segment",
-    options=df["Segment"].unique(),
-    default=df["Segment"].unique()
-)
+region = st.sidebar.multiselect("Region", df["Region"].unique(), default=df["Region"].unique())
+category = st.sidebar.multiselect("Category", df["Category"].unique(), default=df["Category"].unique())
+segment = st.sidebar.multiselect("Segment", df["Segment"].unique(), default=df["Segment"].unique())
 
 filtered_df = df[
-    (df["Region"].isin(region))
-    &
-    (df["Category"].isin(category))
-    &
+    (df["Region"].isin(region)) &
+    (df["Category"].isin(category)) &
     (df["Segment"].isin(segment))
 ]
 
-# =====================================
-# KPI METRICS
-# =====================================
-
 total_sales = filtered_df["Sales"].sum()
-
 total_profit = filtered_df["Profit"].sum()
-
 total_quantity = filtered_df["Quantity"].sum()
-
 orders = len(filtered_df)
 
-profit_margin = (
-    (total_profit / total_sales) * 100
-    if total_sales != 0
-    else 0
-)
+profit_margin = (total_profit/total_sales*100) if total_sales else 0
+avg_order = (total_sales/orders) if orders else 0
 
-avg_order_value = (
-    total_sales / orders
-    if orders != 0
-    else 0
-)
+best_region = "N/A"
+if len(filtered_df):
+    best_region = filtered_df.groupby("Region")["Sales"].sum().idxmax()
 
-best_region = (
-    filtered_df.groupby("Region")["Sales"]
-    .sum()
-    .idxmax()
-    if len(filtered_df) > 0
-    else "N/A"
-)
+r1c1,r1c2,r1c3 = st.columns(3)
+r2c1,r2c2,r2c3 = st.columns(3)
 
-c1,c2,c3,c4,c5,c6 = st.columns(6)
-
-c1.metric(
-    "💰 Revenue",
-    f"${total_sales:,.0f}"
-)
-
-c2.metric(
-    "📈 Profit",
-    f"${total_profit:,.0f}"
-)
-
-c3.metric(
-    "📦 Orders",
-    f"{orders:,}"
-)
-
-c4.metric(
-    "🎯 Margin",
-    f"{profit_margin:.2f}%"
-)
-
-c5.metric(
-    "🛒 Avg Order",
-    f"${avg_order_value:,.0f}"
-)
-
-c6.metric(
-    "🌍 Top Region",
-    best_region
-)
-
-st.divider()
+r1c1.metric("Revenue", f"${total_sales:,.0f}")
+r1c2.metric("Profit", f"${total_profit:,.0f}")
+r1c3.metric("Orders", f"{orders:,}")
+r2c1.metric("Quantity", f"{total_quantity:,}")
+r2c2.metric("Margin", f"{profit_margin:.2f}%")
+r2c3.metric("Top Region", best_region)
 
 tab1, tab2, tab3, tab4 = st.tabs(
-    [
-        "📊 Executive Dashboard",
-        "📈 Sales Analytics",
-        "💰 Profitability",
-        "🤖 AI Forecasting"
-    ]
+    ["📊 Executive Dashboard","📈 Sales Analytics","💰 Profitability","🤖 AI Forecasting"]
 )
-# =====================================
-# EXECUTIVE DASHBOARD
-# =====================================
 
 with tab1:
+    c1,c2 = st.columns(2)
 
-    left, right = st.columns(2)
+    sales_region = filtered_df.groupby("Region")["Sales"].sum().reset_index()
+    profit_region = filtered_df.groupby("Region")["Profit"].sum().reset_index()
 
-    with left:
+    with c1:
+        fig = px.bar(sales_region,x="Region",y="Sales",title="Revenue by Region",text_auto=".2s")
+        st.plotly_chart(dark_plot(fig), use_container_width=True)
 
-        sales_region = (
-            filtered_df.groupby("Region")["Sales"]
-            .sum()
-            .reset_index()
-        )
-
-        fig = px.bar(
-            sales_region,
-            x="Region",
-            y="Sales",
-            title="Revenue by Region"
-        )
-
-        fig = dark_plot(fig)
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-    with right:
-
-        profit_region = (
-            filtered_df.groupby("Region")["Profit"]
-            .sum()
-            .reset_index()
-        )
-
-        fig = px.bar(
-            profit_region,
-            x="Region",
-            y="Profit",
-            title="Profit by Region"
-        )
-
-        fig = dark_plot(fig)
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-    st.markdown("### 🎯 Executive Insights")
-
-    top_region = (
-        filtered_df.groupby("Region")["Sales"]
-        .sum()
-        .idxmax()
-    )
-
-    top_category = (
-        filtered_df.groupby("Category")["Sales"]
-        .sum()
-        .idxmax()
-    )
-
-    st.success(
-        f"Highest revenue generated by **{top_region} Region**."
-    )
-
-    st.info(
-        f"Top performing category is **{top_category}**."
-    )
-
-# =====================================
-# SALES ANALYTICS
-# =====================================
+    with c2:
+        fig = px.bar(profit_region,x="Region",y="Profit",title="Profit by Region",text_auto=".2s")
+        st.plotly_chart(dark_plot(fig), use_container_width=True)
 
 with tab2:
+    c1,c2 = st.columns(2)
 
-    left, right = st.columns(2)
+    sales_category = filtered_df.groupby(["Category","Sub-Category"])["Sales"].sum().reset_index()
 
-    with left:
-
-        sales_category = (
-            filtered_df.groupby(
-                ["Category", "Sub-Category"]
-            )["Sales"]
-            .sum()
-            .reset_index()
-        )
-
+    with c1:
         fig = px.treemap(
             sales_category,
-            path=["Category", "Sub-Category"],
+            path=["Category","Sub-Category"],
             values="Sales",
             title="Category Revenue Contribution"
         )
+        st.plotly_chart(dark_plot(fig), use_container_width=True)
 
-        fig = dark_plot(fig)
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-    with right:
-
-        top_states = (
-            filtered_df.groupby("State")["Sales"]
-            .sum()
-            .sort_values(ascending=False)
-            .head(10)
-            .reset_index()
-        )
-
-        fig = px.bar(
-            top_states,
-            x="State",
-            y="Sales",
-            title="Top 10 States by Revenue"
-        )
-
-        fig = dark_plot(fig)
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-    st.markdown("### 📦 Category Performance")
-
-    category_sales = (
-        filtered_df.groupby("Category")["Sales"]
-        .sum()
-        .reset_index()
-    )
-
-    fig = px.bar(
-        category_sales,
-        x="Category",
-        y="Sales",
-        title="Sales by Category"
-    )
-
-    fig = dark_plot(fig)
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-    # =====================================
-# PROFITABILITY ANALYSIS
-# =====================================
+    with c2:
+        top_states = filtered_df.groupby("State")["Sales"].sum().sort_values(ascending=False).head(10).reset_index()
+        fig = px.bar(top_states,x="State",y="Sales",title="Top States by Revenue")
+        st.plotly_chart(dark_plot(fig), use_container_width=True)
 
 with tab3:
-
     fig = px.scatter(
         filtered_df,
         x="Discount",
@@ -381,174 +150,50 @@ with tab3:
         hover_data=["State"],
         title="Discount Impact on Profitability"
     )
+    st.plotly_chart(dark_plot(fig), use_container_width=True)
 
-    fig = dark_plot(fig)
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    st.markdown("### 🔍 Correlation Analysis")
-
-    corr_df = filtered_df[
-        [
-            "Sales",
-            "Quantity",
-            "Discount",
-            "Profit"
-        ]
-    ].corr()
-
+    corr = filtered_df[["Sales","Quantity","Discount","Profit"]].corr()
     fig = ff.create_annotated_heatmap(
-        z=corr_df.values,
-        x=list(corr_df.columns),
-        y=list(corr_df.index),
-        annotation_text=round(corr_df, 2).values
+        z=corr.values,
+        x=list(corr.columns),
+        y=list(corr.index),
+        annotation_text=round(corr,2).values
     )
-
-    fig.update_layout(
-        template="plotly_dark",
-        title="Business Correlation Matrix"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-# =====================================
-# AI FORECASTING
-# =====================================
+    fig.update_layout(template="plotly_dark", title="Correlation Matrix")
+    st.plotly_chart(fig, use_container_width=True)
 
 with tab4:
+    st.subheader("🤖 AI Profit Forecast Engine")
 
-    st.subheader(
-        "🤖 AI Profit Forecast Engine"
-    )
+    sales = st.number_input("Sales", min_value=0.0, value=500.0)
+    quantity = st.number_input("Quantity", min_value=1, value=5)
+    discount = st.slider("Discount", 0.0, 1.0, 0.10)
 
-    sales = st.number_input(
-        "Sales",
-        min_value=0.0,
-        value=500.0
-    )
-
-    quantity = st.number_input(
-        "Quantity",
-        min_value=1,
-        value=5
-    )
-
-    discount = st.slider(
-        "Discount",
-        0.0,
-        1.0,
-        0.10
-    )
-
-    st.info("""
-💡 Enter Sales, Quantity and Discount values
-to estimate expected profit using the trained ML model.
-""")
-
-    if st.button(
-        "Generate Forecast"
-    ):
-
+    if st.button("Generate Forecast"):
         if model is not None:
+            pred = model.predict([[sales, quantity, discount]])[0]
+            st.metric("Predicted Profit", f"${pred:.2f}")
 
-            prediction = model.predict(
-                [[
-                    sales,
-                    quantity,
-                    discount
-                ]]
-            )[0]
-
-            st.metric(
-                "Predicted Profit",
-                f"${prediction:.2f}"
-            )
-
-            if prediction > 500:
-
-                st.success(
-                    "High Profit Opportunity"
-                )
-
-            elif prediction > 0:
-
-                st.info(
-                    "Moderate Profit Opportunity"
-                )
-
+            if pred > 500:
+                st.success("High Profit Opportunity")
+            elif pred > 0:
+                st.info("Moderate Profit Opportunity")
             else:
-
-                st.error(
-                    "Potential Loss Risk"
-                )
-
+                st.error("Potential Loss Risk")
         else:
-
-            st.warning(
-                "profit_prediction_model.pkl not found."
-            )
-
-# =====================================
-# BUSINESS INSIGHTS
-# =====================================
+            st.warning("Model file not available.")
 
 st.divider()
+st.subheader("📋 Executive Insights")
 
-st.subheader(
-    "📋 Executive Business Insights"
-)
-if len(filtered_df) > 0:
+if len(filtered_df):
     top_region = filtered_df.groupby("Region")["Sales"].sum().idxmax()
     top_category = filtered_df.groupby("Category")["Sales"].sum().idxmax()
-    best_state = filtered_df.groupby("State")["Sales"].sum().idxmax()
-else:
-    top_region = top_category = best_state = "N/A"
+    top_state = filtered_df.groupby("State")["Sales"].sum().idxmax()
 
+    st.success(f"Highest revenue generated by {top_region} region.")
+    st.info(f"Top performing category: {top_category}.")
+    st.info(f"Best performing state: {top_state}.")
 
-st.success(
-    f"Highest revenue generated by **{top_region} Region**."
-)
-
-st.info(
-    f"Top performing category is **{top_category}**."
-)
-
-st.info(
-    f"Best performing state is **{best_state}**."
-)
-
-if profit_margin > 15:
-
-    st.success(
-        "Profitability is healthy across selected segments."
-    )
-
-else:
-
-    st.warning(
-        "Profit margin indicates optimization opportunities."
-    )
-
-# =====================================
-# FOOTER
-# =====================================
-
-st.markdown("""
----
-
-### 👨‍💻 Developed By
-
-**Vansh Bathla**
-
-Data Science • Machine Learning • Business Intelligence
-
-GitHub: Vansh745237
-
----
-""")
+st.markdown("---")
+st.markdown("### 👨‍💻 Developed By Vansh Bathla")
